@@ -1,0 +1,43 @@
+type SensorReading {
+    sensorId: ID!
+    location: String
+    temperature: Float
+    humidity: Int
+    timestamp: String
+}
+
+type EnrichedSensorReading {
+    sensorId: ID!
+    location: String
+    temperature: Float
+    humidity: Int
+    timestamp: String
+    heatIndex: Float
+    status: String
+    message: String
+}
+
+type AggregateData {
+    sensorId: ID!
+    avgTemperature: Float
+    avgHumidity: Float
+    count: Int
+    windowStart: String
+    windowEnd: String
+}
+
+type Query {
+    # Latest reading for a sensor
+    latestReading(sensorId: ID!): EnrichedSensorReading
+
+    # Aggregate stats for a sensor
+    aggregateStats(sensorId: ID!): AggregateData
+
+    # Last N alerts for a sensor
+    lastAlerts(sensorId: ID!, limit: Int = 5): [EnrichedSensorReading]
+}
+
+type Subscription {
+    alertStream(sensorId: ID!): EnrichedSensorReading
+    latestReadingStream(sensorId: ID!): EnrichedSensorReading
+}
