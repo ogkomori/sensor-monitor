@@ -96,11 +96,12 @@ public class KafkaStreamConfig {
                 (key, reading) -> !reading.getStatus().equals("OK")
         );
 
-        // Write alerts to Redis
+        // Write alerts to Redis and Push to subscriber
         alertStream.foreach((sensorId, reading) -> {
             String redisKey = "alerts:" + reading.getSensorId();
             redisTemplate.opsForList().leftPush(redisKey, reading); // Keeps the latest alerts at the beginning
             redisTemplate.opsForList().trim(redisKey, 0,9); // Shows the last 10 alerts for a sensor
+            subscriptionService.pushAlert(reading);
         });
 
         alertStream.to(KafkaTopics.ALERTS, Produced.with(Serdes.String(), new JsonSerde<>(EnrichedSensorReading.class)));
