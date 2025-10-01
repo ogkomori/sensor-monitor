@@ -15,10 +15,10 @@ export interface EnrichedSensorReading extends SensorReading {
 export interface AggregateData {
   sensorId: string;
   avgTemperature?: number;
+  minTemperature?: number;
+  maxTemperature?: number;
   avgHumidity?: number;
+  minHumidity?: number;
+  maxHumidity?: number;
   count: number;
-  windowStart: string;
-  windowEnd: string;
 }
-
-export type SensorStatus = 'NORMAL' | 'WARNING' | 'CRITICAL' | 'OFFLINE';

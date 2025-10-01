@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +5,7 @@ import { TrendingUp, Thermometer, Droplets } from 'lucide-react';
 import { EnrichedSensorReading } from '@/lib/graphql/types';
 
 interface LiveChartProps {
-  latestReading?: EnrichedSensorReading;
+  latestReadings?: EnrichedSensorReading[];
   sensorId?: string;
 }
 
@@ -17,30 +16,17 @@ interface ChartDataPoint {
   time: string; // formatted time for display
 }
 
-export const LiveChart = ({ latestReading, sensorId }: LiveChartProps) => {
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-
-  useEffect(() => {
-    if (latestReading && latestReading.temperature !== undefined && latestReading.humidity !== undefined) {
-      const newDataPoint: ChartDataPoint = {
-        timestamp: latestReading.timestamp,
-        temperature: latestReading.temperature,
-        humidity: latestReading.humidity,
-        time: new Date(latestReading.timestamp).toLocaleTimeString(),
-      };
-
-      setChartData(prevData => {
-        const updatedData = [...prevData, newDataPoint];
-        // Keep only the last 20 data points for better visualization
-        return updatedData.slice(-20);
-      });
-    }
-  }, [latestReading]);
-
-  // Reset chart data when sensor changes
-  useEffect(() => {
-    setChartData([]);
-  }, [sensorId]);
+function LiveChart({ latestReadings, sensorId }: LiveChartProps) {
+  // Sort readings by timestamp ascending so time moves left to right
+  const sortedReadings = (latestReadings || []).slice().sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  // Get the latest reading (last in sorted array)
+  const latestReading = sortedReadings.length > 0 ? sortedReadings[sortedReadings.length - 1] : undefined;
+  const chartData: ChartDataPoint[] = sortedReadings.map(reading => ({
+    timestamp: reading.timestamp,
+    temperature: reading.temperature ?? 0,
+    humidity: reading.humidity ?? 0,
+    time: new Date(reading.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+  })).slice(0, 5);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -68,7 +54,7 @@ export const LiveChart = ({ latestReading, sensorId }: LiveChartProps) => {
               Live Sensor Readings
             </CardTitle>
             <CardDescription>
-              Real-time temperature and humidity data for {sensorId || 'selected sensor'}
+              Real-time temperature and humidity data for {latestReading?.location ? `${latestReading.location} sensor` : 'selected sensor'}
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -131,7 +117,7 @@ export const LiveChart = ({ latestReading, sensorId }: LiveChartProps) => {
                   yAxisId="humidity"
                   type="monotone"
                   dataKey="humidity"
-                  stroke="hsl(var(--accent))"
+                  stroke="red"
                   strokeWidth={2}
                   name="Humidity"
                   dot={{ r: 3 }}
@@ -144,4 +130,6 @@ export const LiveChart = ({ latestReading, sensorId }: LiveChartProps) => {
       </CardContent>
     </Card>
   );
-};
+}
+
+export { LiveChart };

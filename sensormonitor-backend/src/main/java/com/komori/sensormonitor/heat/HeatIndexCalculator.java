@@ -12,17 +12,18 @@ public class HeatIndexCalculator {
         + (1.22874e-3 * fahrenheitTemp * fahrenheitTemp * humidity)
         + (8.5282e-4 * fahrenheitTemp * humidity * humidity)
         - (1.99e-6 * fahrenheitTemp * fahrenheitTemp * humidity * humidity);
-        return Math.round(index * 100.0) / 100.0;
+        double celsiusIndex = (index - 32) * 5/9;
+        return Math.round(celsiusIndex * 100.0) / 100.0;
     }
 
     public static HeatIndexWarning getWarning(double heatIndex) {
-        if (heatIndex < 80) {
+        if (heatIndex < 27) {
             return HeatIndexWarnings.OK;
-        } else if (heatIndex <= 90) {
+        } else if (heatIndex <= 32) {
             return HeatIndexWarnings.CAUTION;
-        } else if (heatIndex <= 105) {
+        } else if (heatIndex <= 41) {
             return HeatIndexWarnings.EXTREME_CAUTION;
-        } else if (heatIndex <= 130) {
+        } else if (heatIndex <= 54) {
             return HeatIndexWarnings.DANGER;
         } else {
             return HeatIndexWarnings.EXTREME_DANGER;

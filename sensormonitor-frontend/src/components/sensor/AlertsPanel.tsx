@@ -41,7 +41,7 @@ const getAlertColor = (status: string) => {
 const formatTimestamp = (timestamp: string) => {
   const date = new Date(timestamp);
   return {
-    time: date.toLocaleTimeString(),
+    time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
     date: date.toLocaleDateString(),
   };
 };
@@ -111,8 +111,8 @@ export const AlertsPanel = ({ alerts: initialAlerts, newAlert, loading }: Alerts
           Latest alerts and status updates from monitored sensors
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-80">
+      <CardContent className="py-6">
+        <ScrollArea className="h-[30rem]">
           {alerts.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -128,52 +128,50 @@ export const AlertsPanel = ({ alerts: initialAlerts, newAlert, loading }: Alerts
                   <div
                     key={`${alert.timestamp}-${index}`}
                     className={cn(
-                      'border rounded-lg p-3 transition-all duration-200',
+                      'border rounded-lg p-4 flex flex-col gap-2 bg-white shadow-sm transition-all duration-200',
                       getAlertColor(alert.status),
                       index === 0 && newAlert?.timestamp === alert.timestamp ? 'animate-pulse' : ''
                     )}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        {getAlertIcon(alert.status)}
+                    {/* Top row: Temp, Humidity, Heat Index, Time */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                          <Thermometer className="h-6 w-6 text-blue-600" />
+                          <span className="text-2xl font-bold">{alert.temperature?.toFixed(1) || '--'}°C</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Droplets className="h-6 w-6 text-cyan-600" />
+                          <span className="text-2xl font-bold">{alert.humidity || '--'}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold text-orange-600">Heat Index</span>
+                          <span className="text-xl font-bold">{alert.heatIndex?.toFixed(1) || '--'}°C</span>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs">
-                            {alert.status}
-                          </Badge>
-                          <span className="text-sm font-medium">
-                            {alert.sensorId}
-                          </span>
-                        </div>
-                        
-                        {alert.message && (
-                          <p className="text-sm mb-2">{alert.message}</p>
-                        )}
-                        
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="flex items-center gap-1">
-                            <Thermometer className="h-3 w-3" />
-                            <span>{alert.temperature?.toFixed(1) || '--'}°C</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Droplets className="h-3 w-3" />
-                            <span>{alert.humidity || '--'}%</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{alert.location || 'Unknown'}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{time} • {date}</span>
-                          </div>
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-lg font-semibold">{time}</span>
                       </div>
                     </div>
+                    {/* Secondary row: Status, Location, Date */}
+                    <div className="flex items-center justify-between text-xs mt-1">
+                      <div className="flex items-center gap-2">
+                        {getAlertIcon(alert.status)}
+                        <Badge variant="outline" className="text-xs">
+                          {alert.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{alert.location || 'Unknown'}</span>
+                      </div>
+                      <span className="text-muted-foreground">{date}</span>
+                    </div>
+                    {/* Optional message */}
+                    {alert.message && (
+                      <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
+                    )}
                   </div>
                 );
               })}

@@ -13,7 +13,7 @@ public class KafkaTopics {
 
     @Bean
     public NewTopic rawData() {
-        return new NewTopic(RAW, 1, (short) 1);
+        return new NewTopic(RAW, 3, (short) 1);
     }
 
     @Bean

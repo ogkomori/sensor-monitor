@@ -1,5 +1,6 @@
 package com.komori.sensormonitor.config;
 
+import com.komori.sensormonitor.sensor.AggregateData;
 import com.komori.sensormonitor.sensor.EnrichedSensorReading;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +13,13 @@ public class SubscriptionConfig {
         return Sinks.many().multicast().onBackpressureBuffer();
     }
 
-    @Bean Sinks.Many<EnrichedSensorReading> latestSink() {
+    @Bean
+    public Sinks.Many<AggregateData> aggregateSink() {
+        return Sinks.many().replay().latest();
+    }
+
+    @Bean()
+    public Sinks.Many<EnrichedSensorReading> latestSink() {
         return Sinks.many().multicast().onBackpressureBuffer();
     }
 }

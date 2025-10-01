@@ -12,11 +12,15 @@ interface MetricsCardsProps {
 
 const getStatusColor = (status: string) => {
   switch (status?.toUpperCase()) {
-    case 'NORMAL':
+    case 'OK':
       return 'bg-success text-success-foreground';
-    case 'WARNING':
+    case 'CAUTION':
       return 'bg-warning text-warning-foreground';
-    case 'CRITICAL':
+    case 'EXTREME CAUTION':
+      return 'bg-warning text-warning-foreground';
+    case 'DANGER':
+      return 'bg-destructive text-destructive-foreground';
+    case 'EXTREME DANGER':
       return 'bg-destructive text-destructive-foreground';
     default:
       return 'bg-muted text-muted-foreground';
@@ -24,7 +28,8 @@ const getStatusColor = (status: string) => {
 };
 
 const formatTimestamp = (timestamp: string) => {
-  return new Date(timestamp).toLocaleString();
+  const date = new Date(timestamp);
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`;
 };
 
 export const MetricsCards = ({ latestReading, aggregateData, loading }: MetricsCardsProps) => {
@@ -130,30 +135,39 @@ export const MetricsCards = ({ latestReading, aggregateData, loading }: MetricsC
         <>
           <Card className="md:col-span-2">
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Average Metrics</CardTitle>
-              <CardDescription>
-                Window: {formatTimestamp(aggregateData.windowStart)} - {formatTimestamp(aggregateData.windowEnd)}
-              </CardDescription>
+              <CardTitle className="text-sm font-medium">Aggregate Metrics</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
                 <div>
+                  <p className="text-xs text-muted-foreground mb-1">Avg Temperature</p>
                   <div className="text-lg font-semibold">
                     {aggregateData.avgTemperature?.toFixed(1) || '--'}°C
                   </div>
-                  <p className="text-xs text-muted-foreground">Avg Temperature</p>
+                  {aggregateData.minTemperature !== undefined && (
+                    <div className="text-xs text-muted-foreground">Min: {aggregateData.minTemperature?.toFixed(1)}°C</div>
+                  )}
+                  {aggregateData.maxTemperature !== undefined && (
+                    <div className="text-xs text-muted-foreground">Max: {aggregateData.maxTemperature?.toFixed(1)}°C</div>
+                  )}
                 </div>
                 <div>
+                  <p className="text-xs text-muted-foreground mb-1">Avg Humidity</p>
                   <div className="text-lg font-semibold">
                     {aggregateData.avgHumidity?.toFixed(1) || '--'}%
                   </div>
-                  <p className="text-xs text-muted-foreground">Avg Humidity</p>
+                  {aggregateData.minHumidity !== undefined && (
+                    <div className="text-xs text-muted-foreground">Min: {aggregateData.minHumidity?.toFixed(1)}%</div>
+                  )}
+                  {aggregateData.maxHumidity !== undefined && (
+                    <div className="text-xs text-muted-foreground">Max: {aggregateData.maxHumidity?.toFixed(1)}%</div>
+                  )}
                 </div>
                 <div>
+                  <p className="text-xs text-muted-foreground mb-1">Total Readings</p>
                   <div className="text-lg font-semibold">
                     {aggregateData.count}
                   </div>
-                  <p className="text-xs text-muted-foreground">Total Readings</p>
                 </div>
               </div>
             </CardContent>

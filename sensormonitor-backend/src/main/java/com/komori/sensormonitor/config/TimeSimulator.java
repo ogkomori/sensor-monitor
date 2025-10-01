@@ -1,10 +1,9 @@
 package com.komori.sensormonitor.config;
 
-import lombok.Data;
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
-@Data
 public class TimeSimulator {
-    public static LocalDateTime time =  LocalDateTime.of(2025, 9, 6, 0, 0);
+    public static LocalDateTime time = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT);
 }

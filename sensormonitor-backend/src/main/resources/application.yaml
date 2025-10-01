@@ -1,6 +1,8 @@
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
+    streams:
+      application-id: sensor-stream-app
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -10,10 +12,27 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
-        spring.json.value.default.type: com.komori.sensormonitor.event.SensorReading
+        spring.json.value.default.type: com.komori.sensormonitor.sensor.SensorReading
         spring.json.trusted.packages: "*"
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
   data:
     redis:
-      host: localhost
+      host: redis
       port: 6379
+  graphql:
+    websocket:
+      path: /graphql
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: jdbc:postgresql://postgres:5432/sensormonitor
+    driver-class-name: org.postgresql.Driver
+    username: tega
+    password: sensor
+    hikari:
+      initialization-fail-timeout: 30000
+
+logging:
+  level:
+    org.apache.kafka: warn
+    org.springframework.kafka: warn

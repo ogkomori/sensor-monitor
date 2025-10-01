@@ -17,9 +17,4 @@ public class SensorReading {
     private double temperature;
     private int humidity;
     private LocalDateTime timestamp;
-
-    public String toFancyString() {
-        return String.format("[%s] %s Temp: %.1f°C Humidity: %d%% at %s",
-                sensorId, location, temperature, humidity, timestamp);
-    }
 }

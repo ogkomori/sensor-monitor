@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
-export const GET_LATEST_READING = gql`
-  query GetLatestReading($sensorId: ID!) {
-    latestReading(sensorId: $sensorId) {
+export const GET_LATEST_READINGS = gql`
+  query GetLatestReadings($sensorId: ID!, $limit: Int = 5) {
+    latestReadings(sensorId: $sensorId, limit: $limit) {
       sensorId
       location
       temperature
@@ -20,10 +20,12 @@ export const GET_AGGREGATE_STATS = gql`
     aggregateStats(sensorId: $sensorId) {
       sensorId
       avgTemperature
+      minTemperature
+      maxTemperature
       avgHumidity
+      minHumidity
+      maxHumidity
       count
-      windowStart
-      windowEnd
     }
   }
 `;

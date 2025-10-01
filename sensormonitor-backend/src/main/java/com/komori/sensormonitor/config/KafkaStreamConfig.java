@@ -7,56 +7,73 @@ import com.komori.sensormonitor.heat.HeatIndexWarning;
 import com.komori.sensormonitor.sensor.SensorReading;
 import com.komori.sensormonitor.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.annotation.EnableKafkaStreams;
 import org.springframework.kafka.support.serializer.JsonSerde;
 
 import java.time.Duration;
+import java.time.ZoneOffset;
 
+@Slf4j
 @Configuration
+@EnableKafkaStreams
 @RequiredArgsConstructor
 public class KafkaStreamConfig {
     private final RedisTemplate<String, Object> redisTemplate;
     private final SubscriptionService subscriptionService;
+    private final StreamsBuilder builder;
 
     @Bean
     public KStream<String, AggregateData> aggregateStream() {
-        KStream<String, SensorReading> rawStream = builder().stream(
+        KStream<String, SensorReading> rawStream = builder.stream(
                 KafkaTopics.RAW,
                 Consumed.with(Serdes.String(), new JsonSerde<>(SensorReading.class))
         );
 
         KStream<String, AggregateData> aggStream = rawStream
                 .groupByKey()
-                .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofMinutes(1)))
                 .aggregate(
                         AggregateData::new, // initializer
                         (key, reading, agg) -> {
+                            log.info("KEY: {}, COUNT: {}", key, agg.getCount());
+                            if (agg.getCount() == 24) { // Reset for a new day
+                                agg = new AggregateData();
+                            }
+
                             agg.setSensorId(reading.getSensorId());
                             agg.setCount(agg.getCount() + 1);
                             agg.setAvgHumidity(updateAverage(reading.getHumidity(), agg.getAvgHumidity(), agg.getCount()));
                             agg.setAvgTemperature(updateAverage(reading.getTemperature(), agg.getAvgTemperature(), agg.getCount()));
+                            if (reading.getTemperature() > agg.getMaxTemperature()) {
+                                agg.setMaxTemperature(reading.getTemperature());
+                            } else if (reading.getTemperature() < agg.getMinTemperature()) {
+                                agg.setMinTemperature(reading.getTemperature());
+                            }
+                            if (reading.getHumidity() > agg.getMaxHumidity()) {
+                                agg.setMaxHumidity(reading.getHumidity());
+                            } else if (reading.getHumidity() < agg.getMinHumidity()) {
+                                agg.setMinHumidity(reading.getHumidity());
+                            }
+                            log.info("About to return agg for {}", agg.getSensorId());
                             return agg;
                         },
                         Materialized.with(Serdes.String(), new JsonSerde<>(AggregateData.class))
                 )
-//                .suppress(Suppressed.untilWindowCloses(new StrictBufferConfigImpl())) --> prevents values from showing between windows
-                .toStream()
-                .map((window, agg) -> {
-                    agg.setWindowStart(window.window().startTime().toString());
-                    agg.setWindowEnd(window.window().endTime().toString());
-                    return new KeyValue<>(window.key(), agg); // get the String from Windowed<String>
-                });
+                .suppress(Suppressed.untilTimeLimit(Duration.ZERO, Suppressed.BufferConfig.unbounded()))
+                .toStream();
 
-        // Save to redis
+        // Save to redis and Push to subscriber
         aggStream.foreach((sensorId, agg) -> {
+            log.info("In the redis/sub loop for {}", sensorId);
             String redisKey = "sensor:" + sensorId + ":aggregate";
             redisTemplate.opsForValue().set(redisKey, agg);
+            subscriptionService.pushAggregateData(agg);
         });
 
         // Send to topic
@@ -66,7 +83,7 @@ public class KafkaStreamConfig {
 
     @Bean
     public KStream<String, EnrichedSensorReading> enrichedStream() {
-        KStream<String, SensorReading> rawStream = builder().stream(
+        KStream<String, SensorReading> rawStream = builder.stream(
                 KafkaTopics.RAW,
                 Consumed.with(Serdes.String(), new JsonSerde<>(SensorReading.class))
         );
@@ -76,7 +93,8 @@ public class KafkaStreamConfig {
         // Save to Redis and Push to subscriber
         enrichedStream.foreach((sensorId, reading) -> {
             String redisKey = "sensor:" + sensorId + ":latest";
-            redisTemplate.opsForValue().set(redisKey, reading);
+            redisTemplate.opsForList().leftPush(redisKey, reading);
+            redisTemplate.opsForList().trim(redisKey, 0, 4); // Shows the 5 latest readings for a sensor
             subscriptionService.pushLatestReading(reading);
         });
 
@@ -87,7 +105,7 @@ public class KafkaStreamConfig {
 
     @Bean
     public KStream<String, EnrichedSensorReading> alertStream() {
-        KStream<String, EnrichedSensorReading> enrichedStream = builder().stream(
+        KStream<String, EnrichedSensorReading> enrichedStream = builder.stream(
                 KafkaTopics.ENRICHED,
                 Consumed.with(Serdes.String(), new JsonSerde<>(EnrichedSensorReading.class))
         );
@@ -100,18 +118,13 @@ public class KafkaStreamConfig {
         alertStream.foreach((sensorId, reading) -> {
             String redisKey = "alerts:" + reading.getSensorId();
             redisTemplate.opsForList().leftPush(redisKey, reading); // Keeps the latest alerts at the beginning
-            redisTemplate.opsForList().trim(redisKey, 0,9); // Shows the last 10 alerts for a sensor
+            redisTemplate.opsForList().trim(redisKey, 0,4); // Shows the last 5 alerts for a sensor
             subscriptionService.pushAlert(reading);
         });
 
         alertStream.to(KafkaTopics.ALERTS, Produced.with(Serdes.String(), new JsonSerde<>(EnrichedSensorReading.class)));
 
         return alertStream;
-    }
-
-    @Bean
-    public StreamsBuilder builder() {
-        return new StreamsBuilder();
     }
 
     private EnrichedSensorReading toEnrichedReading(SensorReading reading) {
@@ -125,7 +138,7 @@ public class KafkaStreamConfig {
                 .heatIndex(heatIndex)
                 .sensorId(reading.getSensorId())
                 .location(reading.getLocation())
-                .timestamp(reading.getTimestamp())
+                .timestamp(reading.getTimestamp().toInstant(ZoneOffset.UTC))
                 .build();
     }
 

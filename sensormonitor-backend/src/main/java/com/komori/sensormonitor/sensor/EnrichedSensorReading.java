@@ -1,24 +1,32 @@
 package com.komori.sensormonitor.sensor;
 
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@RedisHash("SensorReading")
 public class EnrichedSensorReading {
-    @Id
     private String sensorId;
     private String location;
     private double temperature;
     private int humidity;
     private double heatIndex;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
     private String status;
     private String message;
+
+    public EnrichedSensorReading(SensorReadingEntity entity) {
+        this.sensorId = entity.getSensorId();
+        this.location = entity.getLocation();
+        this.temperature = entity.getTemperature();
+        this.humidity = entity.getHumidity();
+        this.heatIndex = entity.getHeatIndex();
+        this.timestamp = entity.getTimestamp().atOffset(ZoneOffset.UTC).toInstant();
+        this.status = entity.getStatus();
+        this.message = entity.getMessage();
+    }
 }

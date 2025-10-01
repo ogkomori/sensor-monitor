@@ -20,15 +20,17 @@ type EnrichedSensorReading {
 type AggregateData {
     sensorId: ID!
     avgTemperature: Float
+    minTemperature: Float
+    maxTemperature: Float
     avgHumidity: Float
+    minHumidity: Float
+    maxHumidity: Float
     count: Int
-    windowStart: String
-    windowEnd: String
 }
 
 type Query {
     # Latest reading for a sensor
-    latestReading(sensorId: ID!): EnrichedSensorReading
+    latestReadings(sensorId: ID!, limit: Int = 5): [EnrichedSensorReading]
 
     # Aggregate stats for a sensor
     aggregateStats(sensorId: ID!): AggregateData
@@ -39,5 +41,8 @@ type Query {
 
 type Subscription {
     alertStream(sensorId: ID!): EnrichedSensorReading
+
+    aggregateStream(sensorId: ID!): AggregateData
+
     latestReadingStream(sensorId: ID!): EnrichedSensorReading
 }

@@ -1,10 +1,8 @@
-package com.komori.sensormonitor.config;
-
-import com.komori.sensormonitor.sensor.Sensor;
+package com.komori.sensormonitor.sensor;
 
 import java.util.List;
 
-public class SensorConfig {
+public class SensorList {
     public static List<Sensor> getSensors() {
         return List.of(
                 new Sensor("sensor_01", "Office", 20.0, 60),

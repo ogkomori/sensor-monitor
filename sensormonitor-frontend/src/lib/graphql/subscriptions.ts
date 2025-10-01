@@ -15,6 +15,21 @@ export const ALERT_STREAM = gql`
   }
 `;
 
+export const AGGREGATE_STREAM = gql`
+  subscription AggregateStream($sensorId: ID!) {
+    aggregateStream(sensorId: $sensorId) {
+      sensorId
+      avgTemperature
+      minTemperature
+      maxTemperature
+      avgHumidity
+      minHumidity
+      maxHumidity
+      count
+    }
+  }
+`;
+
 export const LATEST_READING_STREAM = gql`
   subscription LatestReadingStream($sensorId: ID!) {
     latestReadingStream(sensorId: $sensorId) {

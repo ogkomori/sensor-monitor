@@ -11,9 +11,14 @@ const httpLink = createHttpLink({
 // WebSocket link for subscriptions
 const wsLink = new GraphQLWsLink(createClient({
   url: 'ws://localhost:8080/graphql',
-  connectionParams: {
-    // Add any auth headers here if needed
-  },
+  retryAttempts: Infinity, // retry indefinitely
+  lazy: true, // connect on first subscription
+  keepAlive: 10000, // send ping every 10 seconds
+  on: {
+    connected: () => console.log('WebSocket connected'),
+    closed: (event) => console.log('WebSocket closed', event),
+    error: (error) => console.error('WebSocket error', error),
+  }
 }));
 
 // Split link to route requests based on operation type
