@@ -42,14 +42,12 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
-      KAFKA_LOG4J_OPTS: "-Dlog4j.configuration=file:/etc/kafka/log4j2.properties"
-    volumes:
-      - ./docker/kafka/log4j2.properties:/etc/kafka/log4j2.properties
     healthcheck:
-      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list || exit 1" ]
+      test: ["CMD-SHELL", "grep -q 'Kafka Server started' /opt/kafka/logs/server.log || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   # REDIS
   redis:

@@ -3,7 +3,6 @@ package com.komori.sensormonitor.sensor;
 import lombok.*;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
 
 @Data
 @Builder
@@ -25,7 +24,7 @@ public class EnrichedSensorReading {
         this.temperature = entity.getTemperature();
         this.humidity = entity.getHumidity();
         this.heatIndex = entity.getHeatIndex();
-        this.timestamp = entity.getTimestamp().atOffset(ZoneOffset.UTC).toInstant();
+        this.timestamp = entity.getTimestamp();
         this.status = entity.getStatus();
         this.message = entity.getMessage();
     }

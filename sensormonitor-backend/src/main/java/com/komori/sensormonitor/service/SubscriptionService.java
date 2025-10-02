@@ -3,11 +3,9 @@ package com.komori.sensormonitor.service;
 import com.komori.sensormonitor.sensor.AggregateData;
 import com.komori.sensormonitor.sensor.EnrichedSensorReading;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Sinks;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubscriptionService {
@@ -20,9 +18,7 @@ public class SubscriptionService {
     }
 
     public void pushAggregateData(AggregateData aggregateData) {
-        log.info("Push method called for {}", aggregateData.getSensorId());
-        Sinks.EmitResult result = aggregateSink.tryEmitNext(aggregateData);
-        log.info("SensorId: {}, Result: {}", aggregateData.getSensorId(), result);
+        aggregateSink.tryEmitNext(aggregateData);
     }
 
     public void pushAlert(EnrichedSensorReading reading) {

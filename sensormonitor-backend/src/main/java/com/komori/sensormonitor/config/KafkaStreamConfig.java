@@ -7,7 +7,6 @@ import com.komori.sensormonitor.heat.HeatIndexWarning;
 import com.komori.sensormonitor.sensor.SensorReading;
 import com.komori.sensormonitor.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.kstream.*;
@@ -20,7 +19,6 @@ import org.springframework.kafka.support.serializer.JsonSerde;
 import java.time.Duration;
 import java.time.ZoneOffset;
 
-@Slf4j
 @Configuration
 @EnableKafkaStreams
 @RequiredArgsConstructor
@@ -41,7 +39,6 @@ public class KafkaStreamConfig {
                 .aggregate(
                         AggregateData::new, // initializer
                         (key, reading, agg) -> {
-                            log.info("KEY: {}, COUNT: {}", key, agg.getCount());
                             if (agg.getCount() == 24) { // Reset for a new day
                                 agg = new AggregateData();
                             }
@@ -60,7 +57,6 @@ public class KafkaStreamConfig {
                             } else if (reading.getHumidity() < agg.getMinHumidity()) {
                                 agg.setMinHumidity(reading.getHumidity());
                             }
-                            log.info("About to return agg for {}", agg.getSensorId());
                             return agg;
                         },
                         Materialized.with(Serdes.String(), new JsonSerde<>(AggregateData.class))
@@ -70,7 +66,6 @@ public class KafkaStreamConfig {
 
         // Save to redis and Push to subscriber
         aggStream.foreach((sensorId, agg) -> {
-            log.info("In the redis/sub loop for {}", sensorId);
             String redisKey = "sensor:" + sensorId + ":aggregate";
             redisTemplate.opsForValue().set(redisKey, agg);
             subscriptionService.pushAggregateData(agg);
