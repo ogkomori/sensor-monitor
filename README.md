@@ -10,6 +10,14 @@
 - Fully containerized backend for easy setup
 - Frontend built with a modern JS framework for responsive monitoring
 
+## Screenshots
+<table>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/920dee8e-3bb7-4469-ab48-c8dfef4ab945" alt="Screenshot 1" width="500"></td>
+    <td><img src="https://github.com/user-attachments/assets/2deb113e-1e23-4676-8a4b-4b75df790481" alt="Screenshot 2" width="500"></td>
+  </tr>
+</table>
+
 ## Getting Started
 
 ### Prerequisites
